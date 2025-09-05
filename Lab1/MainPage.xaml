@@ -1,0 +1,246 @@
+<Page
+    x:Class="Lab1.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Lab1"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid x:Name="mainGrid" Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="inputColumn" Width="*" />
+            <ColumnDefinition x:Name="outputColumn" Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition x:Name="inputRow" Height="Auto" />
+            <RowDefinition x:Name="outputRow" Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid.Resources>
+            <Style x:Key="PrimaryButton" TargetType="Button">
+                <Setter Property="Background" Value="#0078D4" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="CornerRadius" Value="5" />
+                <Setter Property="Padding" Value="10,5" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="Margin" Value="0,0,0,10" />
+            </Style>
+            <Style x:Key="HeaderText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="20" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Margin" Value="0,0,0,10" />
+            </Style>
+            <Style x:Key="AdaptiveTextBox" TargetType="TextBox">
+                <Setter Property="AcceptsReturn" Value="True" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+                <Setter Property="MinHeight" Value="100" />
+                <Setter Property="Margin" Value="0,0,0,10" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="VerticalAlignment" Value="Stretch" />
+            </Style>
+            <Style x:Key="AdaptiveComboBox" TargetType="ComboBox">
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="Margin" Value="0,0,0,10" />
+            </Style>
+        </Grid.Resources>
+
+        <!-- InputPanel -->
+        <Grid x:Name="inputPanel" Grid.Column="0" Grid.Row="0" Margin="10,0,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Text="Введите текст" Style="{StaticResource HeaderText}" />
+            <TextBox x:Name="inputTextBox" Grid.Row="1"
+                     PlaceholderText="Введите ваш текст" 
+                     Style="{StaticResource AdaptiveTextBox}" 
+                     Text="{Binding InputText, Mode=TwoWay}" />
+
+            <Button Grid.Row="2" Content="Вставить" 
+                    Style="{StaticResource PrimaryButton}"
+                    Command="{Binding PasteCommand}"
+                    Click="PasteButton_Click" />
+
+            <!-- ComboBoxes -->
+            <Grid x:Name="comboBoxesContainer" Grid.Row="3" Margin="0,0,0,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="0" />
+                    <RowDefinition Height="0" />
+                    <RowDefinition Height="0" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="0" />
+                    <ColumnDefinition Width="0" />
+                </Grid.ColumnDefinitions>
+                <ComboBox x:Name="alphabetComboBox" Header="Выбранный алфавит" Style="{StaticResource AdaptiveComboBox}" 
+                          Grid.Row="0" Grid.Column="0"
+                          ItemsSource="{Binding Alphabets}" 
+                          SelectedItem="{Binding SelectedAlphabet, Mode=TwoWay}"
+                          SelectionChanged="AlphabetComboBox_SelectionChanged"
+                          Visibility="{Binding AlphabetComboBoxVisibility}" />
+                <ComboBox x:Name="operationComboBox" Header="Тип операции" Style="{StaticResource AdaptiveComboBox}" 
+                          Grid.Row="0" Grid.Column="1"
+                          ItemsSource="{Binding Operations}" 
+                          SelectedItem="{Binding SelectedOperation, Mode=TwoWay}"
+                          SelectionChanged="OperationComboBox_SelectionChanged"
+                          Visibility="{Binding OperationComboBoxVisibility}" />
+                <ComboBox x:Name="shiftComboBox" Header="Сдвиг" Style="{StaticResource AdaptiveComboBox}" 
+                          Grid.Row="0" Grid.Column="2"
+                          ItemsSource="{Binding Shifts}" 
+                          SelectedItem="{Binding SelectedShift, Mode=TwoWay}"
+                          SelectionChanged="ShiftComboBox_SelectionChanged"
+                          Visibility="{Binding ShiftVisibility}" />
+            </Grid>
+
+            <Button Grid.Row="4" Content="Рассчитать" 
+                    Style="{StaticResource PrimaryButton}"
+                    Command="{Binding CalculateCommand}"
+                    Click="CalculateButton_Click" />
+        </Grid>
+
+        <!-- OutputPanel -->
+        <Grid x:Name="outputPanel" Grid.Column="1" Grid.Row="0" Margin="10,0,0,0" Visibility="{Binding OutputVisibility}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Text="Результат" Style="{StaticResource HeaderText}" />
+            <TextBox x:Name="resultTextBox" Grid.Row="1"
+                     Style="{StaticResource AdaptiveTextBox}" 
+                     IsReadOnly="True" 
+                     Text="{Binding OutputText}" />
+            <Button Grid.Row="2" Content="Копировать" 
+                    Style="{StaticResource PrimaryButton}" 
+                    Command="{Binding CopyCommand}"
+                    Click="CopyButton_Click" />
+        </Grid>
+
+        <!-- Visual states -->
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="layoutStates">
+
+                <!-- 1) Узкий (Min=0) -->
+                <VisualState x:Name="narrowLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="inputColumn.Width" Value="*" />
+                        <Setter Target="outputColumn.Width" Value="0" />
+
+                        <Setter Target="inputRow.Height" Value="*" />
+                        <Setter Target="outputRow.Height" Value="*" />
+
+                        <Setter Target="inputPanel.(Grid.Column)" Value="0" />
+                        <Setter Target="inputPanel.(Grid.Row)" Value="0" />
+
+                        <Setter Target="outputPanel.(Grid.Column)" Value="0" />
+                        <Setter Target="outputPanel.(Grid.Row)" Value="1" />
+
+                        <Setter Target="comboBoxesContainer.RowDefinitions[0].Height" Value="Auto" />
+                        <Setter Target="comboBoxesContainer.RowDefinitions[1].Height" Value="Auto" />
+                        <Setter Target="comboBoxesContainer.RowDefinitions[2].Height" Value="Auto" />
+                        <Setter Target="comboBoxesContainer.ColumnDefinitions[0].Width" Value="*" />
+                        <Setter Target="comboBoxesContainer.ColumnDefinitions[1].Width" Value="0" />
+                        <Setter Target="comboBoxesContainer.ColumnDefinitions[2].Width" Value="0" />
+
+                        <Setter Target="alphabetComboBox.(Grid.Row)" Value="0" />
+                        <Setter Target="alphabetComboBox.(Grid.Column)" Value="0" />
+                        <Setter Target="operationComboBox.(Grid.Row)" Value="1" />
+                        <Setter Target="operationComboBox.(Grid.Column)" Value="0" />
+                        <Setter Target="shiftComboBox.(Grid.Row)" Value="2" />
+                        <Setter Target="shiftComboBox.(Grid.Column)" Value="0" />
+
+                        <Setter Target="alphabetComboBox.Margin" Value="0,0,0,10" />
+                        <Setter Target="operationComboBox.Margin" Value="0,0,0,10" />
+                        <Setter Target="shiftComboBox.Margin" Value="0,0,0,10" />
+                    </VisualState.Setters>
+                </VisualState>
+
+                <!-- 2) Средний (Min=600) -->
+                <VisualState x:Name="mediumLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="600" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="inputColumn.Width" Value="*" />
+                        <Setter Target="outputColumn.Width" Value="0" />
+
+                        <Setter Target="inputRow.Height" Value="*" />
+                        <Setter Target="outputRow.Height" Value="*" />
+
+                        <Setter Target="inputPanel.(Grid.Column)" Value="0" />
+                        <Setter Target="inputPanel.(Grid.Row)" Value="0" />
+
+                        <Setter Target="outputPanel.(Grid.Column)" Value="0" />
+                        <Setter Target="outputPanel.(Grid.Row)" Value="1" />
+
+                        <Setter Target="comboBoxesContainer.RowDefinitions[0].Height" Value="Auto" />
+                        <Setter Target="comboBoxesContainer.RowDefinitions[1].Height" Value="0" />
+                        <Setter Target="comboBoxesContainer.RowDefinitions[2].Height" Value="0" />
+                        <Setter Target="comboBoxesContainer.ColumnDefinitions[0].Width" Value="*" />
+                        <Setter Target="comboBoxesContainer.ColumnDefinitions[1].Width" Value="*" />
+                        <Setter Target="comboBoxesContainer.ColumnDefinitions[2].Width" Value="*" />
+
+                        <Setter Target="alphabetComboBox.(Grid.Row)" Value="0" />
+                        <Setter Target="alphabetComboBox.(Grid.Column)" Value="0" />
+                        <Setter Target="operationComboBox.(Grid.Row)" Value="0" />
+                        <Setter Target="operationComboBox.(Grid.Column)" Value="1" />
+                        <Setter Target="shiftComboBox.(Grid.Row)" Value="0" />
+                        <Setter Target="shiftComboBox.(Grid.Column)" Value="2" />
+
+                        <Setter Target="alphabetComboBox.Margin" Value="0,0,10,0" />
+                        <Setter Target="operationComboBox.Margin" Value="0,0,10,0" />
+                        <Setter Target="shiftComboBox.Margin" Value="0,0,0,0" />
+                    </VisualState.Setters>
+                </VisualState>
+
+                <!-- 3) Широкий (Min=1000) -->
+                <VisualState x:Name="wideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1000" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="inputColumn.Width" Value="*" />
+                        <Setter Target="outputColumn.Width" Value="*" />
+
+                        <Setter Target="inputRow.Height" Value="*" />
+                        <Setter Target="outputRow.Height" Value="0" />
+
+                        <Setter Target="inputPanel.(Grid.Column)" Value="0" />
+                        <Setter Target="inputPanel.(Grid.Row)" Value="0" />
+
+                        <Setter Target="outputPanel.(Grid.Column)" Value="1" />
+                        <Setter Target="outputPanel.(Grid.Row)" Value="0" />
+
+                        <Setter Target="comboBoxesContainer.RowDefinitions[0].Height" Value="Auto" />
+                        <Setter Target="comboBoxesContainer.RowDefinitions[1].Height" Value="0" />
+                        <Setter Target="comboBoxesContainer.RowDefinitions[2].Height" Value="0" />
+                        <Setter Target="comboBoxesContainer.ColumnDefinitions[0].Width" Value="*" />
+                        <Setter Target="comboBoxesContainer.ColumnDefinitions[1].Width" Value="*" />
+                        <Setter Target="comboBoxesContainer.ColumnDefinitions[2].Width" Value="*" />
+
+                        <Setter Target="alphabetComboBox.(Grid.Row)" Value="0" />
+                        <Setter Target="alphabetComboBox.(Grid.Column)" Value="0" />
+                        <Setter Target="operationComboBox.(Grid.Row)" Value="0" />
+                        <Setter Target="operationComboBox.(Grid.Column)" Value="1" />
+                        <Setter Target="shiftComboBox.(Grid.Row)" Value="0" />
+                        <Setter Target="shiftComboBox.(Grid.Column)" Value="2" />
+
+                        <Setter Target="alphabetComboBox.Margin" Value="0,0,10,0" />
+                        <Setter Target="operationComboBox.Margin" Value="0,0,10,0" />
+                        <Setter Target="shiftComboBox.Margin" Value="0,0,0,0" />
+                    </VisualState.Setters>
+                </VisualState>
+
+            </VisualStateGroup>
+
+        </VisualStateManager.VisualStateGroups>
+    </Grid>
+</Page>

@@ -9,7 +9,7 @@ namespace Lab1
 {
     public class ViewModel
     {
-        private MainWindow mainWindow;
+        private MainPage mainPage;
         private Alphabet[] availableAlphabets;
         private Operation[] availableOperations;
 
@@ -17,9 +17,9 @@ namespace Lab1
         private Operation currentOperation;
         private int currentShift;
 
-        public ViewModel(MainWindow mainWindow, Alphabet[] availableAlphabet, Operation[] availableOperations)
+        public ViewModel(MainPage mainPage, Alphabet[] availableAlphabet, Operation[] availableOperations)
         {
-            this.mainWindow = mainWindow;
+            this.mainPage = mainPage;
             this.availableAlphabets = availableAlphabet;
             this.availableOperations = availableOperations;
 
@@ -34,23 +34,23 @@ namespace Lab1
         private void SetupComboBoxes()
         {
             SetupAlphabetComboBox();
-            mainWindow.OnAlphabetComboBoxValueChanged += MainWindow_OnAlphabetComboBoxValueChanged;
+            mainPage.OnAlphabetComboBoxValueChanged += MainWindow_OnAlphabetComboBoxValueChanged;
             SetupOperationComboBox();
-            mainWindow.OnOperationComboBoxValueChanged += MainWindow_OnOperationComboBoxValueChanged;
+            mainPage.OnOperationComboBoxValueChanged += MainWindow_OnOperationComboBoxValueChanged;
             SetupShiftComboBox();
-            mainWindow.OnShiftComboBoxValueChanged += MainWindow_OnShiftComboBoxValueChanged;
+            mainPage.OnShiftComboBoxValueChanged += MainWindow_OnShiftComboBoxValueChanged;
         }
 
         private void SetupAlphabetComboBox()
         {
             string[] alphabetComboBoxOptions = GetUiNames(availableAlphabets);
-            SetupComboBox(mainWindow.AlphabetComboBox, alphabetComboBoxOptions, currentAlphabet.UiName);
+            SetupComboBox(mainPage.AlphabetComboBox, alphabetComboBoxOptions, currentAlphabet.UiName);
         }
 
         private void SetupOperationComboBox()
         {
             string[] operationComboBoxOptions = GetUiNames(availableOperations);
-            SetupComboBox(mainWindow.OperationComboBox, operationComboBoxOptions, currentOperation.UiName);
+            SetupComboBox(mainPage.OperationComboBox, operationComboBoxOptions, currentOperation.UiName);
         }
 
         private void SetupShiftComboBox()
@@ -60,7 +60,7 @@ namespace Lab1
             {
                 shiftComboBoxOptions[i] = i.ToString();
             }
-            SetupComboBox(mainWindow.ShiftComboBox, shiftComboBoxOptions, currentShift.ToString());
+            SetupComboBox(mainPage.ShiftComboBox, shiftComboBoxOptions, currentShift.ToString());
         }
 
         private void MainWindow_OnAlphabetComboBoxValueChanged(string? newValue)
@@ -84,7 +84,7 @@ namespace Lab1
                 if (operation.UiName == newValue)
                 {
                     currentOperation = operation;
-                    mainWindow.ShiftComboBox.Visibility =
+                    mainPage.ShiftComboBox.Visibility =
                         currentOperation.Type != OperationType.Hack ? Microsoft.UI.Xaml.Visibility.Visible :
                                                                       Microsoft.UI.Xaml.Visibility.Collapsed;
                     System.Diagnostics.Debug.WriteLine($"Выбрана операция: {newValue}");
@@ -101,13 +101,13 @@ namespace Lab1
 
         private void SetupButtons()
         {
-            mainWindow.OnCalculateButtonPressed += MainWindow_OnCalculateButtonPressed;
+            mainPage.OnCalculateButtonPressed += MainWindow_OnCalculateButtonPressed;
         }
 
         private void MainWindow_OnCalculateButtonPressed()
         {
-            string inputText = mainWindow.InputTextBox.Text;
-            mainWindow.ResultTextBox.Text = currentOperation.Type switch
+            string inputText = mainPage.InputTextBox.Text;
+            mainPage.ResultTextBox.Text = currentOperation.Type switch
             {
                 OperationType.Decode => CaesarCipher.Decode(inputText, currentAlphabet, currentShift),
                 OperationType.Encode => CaesarCipher.Encode(inputText, currentAlphabet, currentShift),
