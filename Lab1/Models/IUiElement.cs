@@ -1,4 +1,4 @@
-﻿namespace Lab1.Data
+﻿namespace Lab1.Models
 {
     public interface IUiElement
     {

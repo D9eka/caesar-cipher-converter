@@ -1,4 +1,4 @@
-﻿using Lab1.Data.Alphabets;
+﻿using Lab1.Models.Alphabets;
 using System.Collections.Generic;
 using System.Text;
 

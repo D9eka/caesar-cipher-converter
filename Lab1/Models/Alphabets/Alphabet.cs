@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Lab1.Models;
+using System.Collections.Generic;
 
-namespace Lab1.Data.Alphabets
+namespace Lab1.Models.Alphabets
 {
     public class Alphabet : IUiElement
     {

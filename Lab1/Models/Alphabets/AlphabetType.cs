@@ -1,4 +1,4 @@
-﻿namespace Lab1.Data.Alphabets
+﻿namespace Lab1.Models.Alphabets
 {
     public enum AlphabetType
     {

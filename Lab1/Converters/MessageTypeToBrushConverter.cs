@@ -1,4 +1,5 @@
-﻿using Microsoft.UI;
+﻿using Lab1.Services.Message;
+using Microsoft.UI;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -9,13 +10,13 @@ namespace Lab1.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is Lab1.MessageType type)
+            if (value is MessageType type)
             {
                 switch (type)
                 {
-                    case Lab1.MessageType.Error:
+                    case MessageType.Error:
                         return new SolidColorBrush(Colors.IndianRed);   // красный
-                    case Lab1.MessageType.Warning:
+                    case MessageType.Warning:
                         return new SolidColorBrush(Colors.Goldenrod);   // жёлтый/оранжевый
                     default:
                         return new SolidColorBrush(Colors.Transparent);

@@ -1,4 +1,4 @@
-﻿namespace Lab1.Data.Operations
+﻿namespace Lab1.Models.Operations
 {
     public enum OperationType
     {

@@ -1,4 +1,4 @@
-using Lab1.Cipher;
+using Lab1.ViewModels;
 using Microsoft.UI.Xaml.Controls;
 
 namespace Lab1
@@ -8,7 +8,7 @@ namespace Lab1
         public MainPage()
         {
             this.InitializeComponent();
-            this.DataContext = new ViewModel();
+            this.DataContext = new MainViewModel();
         }
     }
 }

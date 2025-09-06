@@ -1,7 +1,6 @@
-﻿using Lab1.Data.Alphabets;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace Lab1.Data
+namespace Lab1.Models.Alphabets
 {
     public static class AlphabetFactory
     {
