@@ -2,134 +2,245 @@
 using Lab1.Data;
 using Lab1.Data.Alphabets;
 using Lab1.Data.Operations;
-using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Windows.Input;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace Lab1
 {
-    public class ViewModel
+    public class ViewModel : INotifyPropertyChanged
     {
-        private MainPage mainPage;
-        private Alphabet[] availableAlphabets;
-        private Operation[] availableOperations;
+        private Alphabet _selectedAlphabet;
+        private Operation _selectedOperation;
+        private int _selectedShift;
+        private string _inputText = string.Empty;
+        private string _outputText = string.Empty;
 
-        private Alphabet currentAlphabet;
-        private Operation currentOperation;
-        private int currentShift;
+        public event PropertyChangedEventHandler PropertyChanged;
 
-        public ViewModel(MainPage mainPage, Alphabet[] availableAlphabet, Operation[] availableOperations)
+        public List<Alphabet> Alphabets { get; }
+        public List<Operation> Operations { get; }
+        public List<int> Shifts { get; private set; }
+
+        public Alphabet SelectedAlphabet
         {
-            this.mainPage = mainPage;
-            this.availableAlphabets = availableAlphabet;
-            this.availableOperations = availableOperations;
-
-            currentAlphabet = availableAlphabet[0];
-            currentOperation = availableOperations[0];
-            currentShift = 0;
-
-            SetupComboBoxes();
-            SetupButtons();
-        }
-
-        private void SetupComboBoxes()
-        {
-            SetupAlphabetComboBox();
-            mainPage.OnAlphabetComboBoxValueChanged += MainWindow_OnAlphabetComboBoxValueChanged;
-            SetupOperationComboBox();
-            mainPage.OnOperationComboBoxValueChanged += MainWindow_OnOperationComboBoxValueChanged;
-            SetupShiftComboBox();
-            mainPage.OnShiftComboBoxValueChanged += MainWindow_OnShiftComboBoxValueChanged;
-        }
-
-        private void SetupAlphabetComboBox()
-        {
-            string[] alphabetComboBoxOptions = GetUiNames(availableAlphabets);
-            SetupComboBox(mainPage.AlphabetComboBox, alphabetComboBoxOptions, currentAlphabet.UiName);
-        }
-
-        private void SetupOperationComboBox()
-        {
-            string[] operationComboBoxOptions = GetUiNames(availableOperations);
-            SetupComboBox(mainPage.OperationComboBox, operationComboBoxOptions, currentOperation.UiName);
-        }
-
-        private void SetupShiftComboBox()
-        {
-            string[] shiftComboBoxOptions = new string[currentAlphabet.MaxShift + 1];
-            for (int i = 0; i < shiftComboBoxOptions.Length; i++)
+            get => _selectedAlphabet;
+            set
             {
-                shiftComboBoxOptions[i] = i.ToString();
-            }
-            SetupComboBox(mainPage.ShiftComboBox, shiftComboBoxOptions, currentShift.ToString());
-        }
-
-        private void MainWindow_OnAlphabetComboBoxValueChanged(string? newValue)
-        {
-            foreach (var alphabet in availableAlphabets)
-            {
-                if (alphabet.UiName == newValue)
-                {
-                    currentAlphabet = alphabet;
-                    SetupShiftComboBox();
-                    System.Diagnostics.Debug.WriteLine($"Выбран алфавит: {newValue}");
-                    return;
-                }
+                SetField(ref _selectedAlphabet, value);
+                UpdateShifts();
+                CommandManager.InvalidateRequerySuggested();
             }
         }
 
-        private void MainWindow_OnOperationComboBoxValueChanged(string? newValue)
+        public Operation SelectedOperation
         {
-            foreach (var operation in availableOperations)
+            get => _selectedOperation;
+            set
             {
-                if (operation.UiName == newValue)
-                {
-                    currentOperation = operation;
-                    mainPage.ShiftComboBox.Visibility =
-                        currentOperation.Type != OperationType.Hack ? Microsoft.UI.Xaml.Visibility.Visible :
-                                                                      Microsoft.UI.Xaml.Visibility.Collapsed;
-                    System.Diagnostics.Debug.WriteLine($"Выбрана операция: {newValue}");
-                    return;
-                }
+                SetField(ref _selectedOperation, value);
+                UpdateShiftVisibility();
+                CommandManager.InvalidateRequerySuggested();
             }
         }
 
-        private void MainWindow_OnShiftComboBoxValueChanged(string? newValue)
+        public int SelectedShift
         {
-            currentShift = Convert.ToInt32(newValue);
-            System.Diagnostics.Debug.WriteLine($"Выбран сдвиг: {newValue}");
+            get => _selectedShift;
+            set => SetField(ref _selectedShift, value);
         }
 
-        private void SetupButtons()
+        public string InputText
         {
-            mainPage.OnCalculateButtonPressed += MainWindow_OnCalculateButtonPressed;
-        }
-
-        private void MainWindow_OnCalculateButtonPressed()
-        {
-            string inputText = mainPage.InputTextBox.Text;
-            mainPage.ResultTextBox.Text = currentOperation.Type switch
+            get => _inputText;
+            set
             {
-                OperationType.Decode => CaesarCipher.Decode(inputText, currentAlphabet, currentShift),
-                OperationType.Encode => CaesarCipher.Encode(inputText, currentAlphabet, currentShift),
-                OperationType.Hack => CaesarCipher.Hack(inputText, currentAlphabet),
-                _ => throw new NotImplementedException()
+                SetField(ref _inputText, value);
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+
+        public string OutputText
+        {
+            get => _outputText;
+            set
+            {
+                SetField(ref _outputText, value);
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+
+        public Visibility ShiftVisibility { get; private set; } = Visibility.Visible;
+
+        public ICommand PasteCommand { get; }
+        public ICommand CalculateCommand { get; }
+        public ICommand CopyCommand { get; }
+
+        public ViewModel()
+        {
+            Alphabets = CreateAlphabets();
+            Operations = CreateOperations();
+
+            SelectedAlphabet = Alphabets.First();
+            SelectedOperation = Operations.First();
+
+            PasteCommand = new RelayCommand(ExecutePaste);
+            CalculateCommand = new RelayCommand(ExecuteCalculate, CanExecuteCalculate);
+            CopyCommand = new RelayCommand(ExecuteCopy, CanExecuteCopy);
+
+            CommandManager.RequerySuggested += (s, e) =>
+            {
+                ((RelayCommand)CalculateCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)CopyCommand).RaiseCanExecuteChanged();
             };
         }
 
-        private string[] GetUiNames(IUiElement[] uiElements)
+        private async void ExecutePaste()
         {
-            string[] uiNames = new string[uiElements.Length];
-            for (int i = 0; i < uiElements.Length; i++)
+            try
             {
-                uiNames[i] = uiElements[i].UiName;
+                var dataPackage = Clipboard.GetContent();
+                if (dataPackage.Contains(StandardDataFormats.Text))
+                {
+                    InputText = await dataPackage.GetTextAsync();
+                }
             }
-            return uiNames;
+            catch (Exception ex)
+            {
+                OutputText = $"Ошибка: {ex.Message}";
+            }
         }
 
-        private void SetupComboBox(ComboBox comboBox, string[] availableItems, string selectedItem)
+        private void ExecuteCalculate()
         {
-            comboBox.ItemsSource = availableItems;
-            comboBox.SelectedItem = selectedItem;
+            try
+            {
+                OutputText = _selectedOperation.Type switch
+                {
+                    OperationType.Decode => CaesarCipher.Decode(InputText, SelectedAlphabet, SelectedShift),
+                    OperationType.Encode => CaesarCipher.Encode(InputText, SelectedAlphabet, SelectedShift),
+                    OperationType.Hack => CaesarCipher.Hack(InputText, SelectedAlphabet),
+                    _ => throw new InvalidOperationException("Неизвестный тип операции")
+                };
+            }
+            catch (Exception ex)
+            {
+                OutputText = $"Ошибка при обработке: {ex.Message}";
+            }
+        }
+
+        private bool CanExecuteCalculate() => !string.IsNullOrWhiteSpace(InputText);
+
+        private void ExecuteCopy()
+        {
+            try
+            {
+                var dataPackage = new DataPackage();
+                dataPackage.SetText(OutputText);
+                Clipboard.SetContent(dataPackage);
+            }
+            catch (Exception ex)
+            {
+                OutputText = $"Ошибка при копировании: {ex.Message}";
+            }
+        }
+
+        private bool CanExecuteCopy() => !string.IsNullOrWhiteSpace(OutputText);
+
+        private void UpdateShifts()
+        {
+            Shifts = Enumerable.Range(0, SelectedAlphabet.MaxShift + 1).ToList();
+            OnPropertyChanged(nameof(Shifts));
+            SelectedShift = Math.Min(SelectedShift, SelectedAlphabet.MaxShift);
+        }
+
+        private void UpdateShiftVisibility()
+        {
+            ShiftVisibility = SelectedOperation.Type != OperationType.Hack
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            OnPropertyChanged(nameof(ShiftVisibility));
+        }
+
+        private List<Alphabet> CreateAlphabets()
+        {
+            return new List<Alphabet>
+            {
+                AlphabetFactory.CreateRussianAlphabet(),
+                AlphabetFactory.CreateEnglishAlphabet()
+            };
+        }
+
+        private List<Operation> CreateOperations()
+        {
+            return new List<Operation>
+            {
+                new Operation(OperationType.Encode, "Зашифровать"),
+                new Operation(OperationType.Decode, "Расшифровать"),
+                new Operation(OperationType.Hack, "Взломать")
+            };
+        }
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected void SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        {
+            field = value;
+            OnPropertyChanged(propertyName);
+        }
+    }
+
+    public class RelayCommand : ICommand
+    {
+        private readonly Action _execute;
+        private readonly Func<bool> _canExecute;
+        private readonly Action<Exception> _errorHandler;
+
+        public event EventHandler CanExecuteChanged;
+
+        public RelayCommand(Action execute, Func<bool> canExecute = null, Action<Exception> errorHandler = null)
+        {
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecute = canExecute;
+            _errorHandler = errorHandler;
+        }
+
+        public bool CanExecute(object parameter) => _canExecute?.Invoke() ?? true;
+
+        public void Execute(object parameter)
+        {
+            try
+            {
+                if (CanExecute(parameter))
+                {
+                    _execute();
+                }
+            }
+            catch (Exception ex)
+            {
+                _errorHandler?.Invoke(ex);
+            }
+        }
+
+        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    // Класс для управления командами
+    public static class CommandManager
+    {
+        public static event EventHandler RequerySuggested;
+
+        public static void InvalidateRequerySuggested()
+        {
+            RequerySuggested?.Invoke(null, EventArgs.Empty);
         }
     }
 }
