@@ -81,6 +81,32 @@ namespace Lab1
         public ICommand CalculateCommand { get; }
         public ICommand CopyCommand { get; }
 
+        private string _errorMessage;
+        private Visibility _errorVisibility = Visibility.Collapsed;
+        private MessageType _messageType = MessageType.None;
+
+        public string ErrorMessage
+        {
+            get => _errorMessage;
+            set
+            {
+                SetField(ref _errorMessage, value);
+                ErrorVisibility = string.IsNullOrWhiteSpace(value) ? Visibility.Collapsed : Visibility.Visible;
+            }
+        }
+
+        public Visibility ErrorVisibility
+        {
+            get => _errorVisibility;
+            set => SetField(ref _errorVisibility, value);
+        }
+
+        public MessageType MessageType
+        {
+            get => _messageType;
+            set => SetField(ref _messageType, value);
+        }
+
         public ViewModel()
         {
             Alphabets = CreateAlphabets();
@@ -120,6 +146,36 @@ namespace Lab1
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(InputText))
+                {
+                    ErrorMessage = "Введите текст для обработки.";
+                    MessageType = MessageType.Error;
+                    OutputText = string.Empty;
+                    return;
+                }
+
+                var validChars = InputText.Count(c =>
+                    (c >= (char)SelectedAlphabet.StartCharIndex && c <= (char)SelectedAlphabet.EndCharIndex || c == ' ')
+                    || SelectedAlphabet.CharsToReplace.ContainsKey(c));
+
+                if (validChars == 0)
+                {
+                    ErrorMessage = "Ошибка: все символы не соответствуют выбранному алфавиту.";
+                    MessageType = MessageType.Error;
+                    OutputText = string.Empty;
+                    return;
+                }
+                else if (validChars < InputText.Length)
+                {
+                    ErrorMessage = "Предупреждение: некоторые символы не соответствуют алфавиту и будут пропущены.";
+                    MessageType = MessageType.Warning;
+                }
+                else
+                {
+                    ErrorMessage = string.Empty;
+                    MessageType = MessageType.None;
+                }
+
                 OutputText = _selectedOperation.Type switch
                 {
                     OperationType.Decode => CaesarCipher.Decode(InputText, SelectedAlphabet, SelectedShift),
@@ -130,7 +186,9 @@ namespace Lab1
             }
             catch (Exception ex)
             {
-                OutputText = $"Ошибка при обработке: {ex.Message}";
+                ErrorMessage = $"Ошибка при обработке: {ex.Message}";
+                MessageType = MessageType.Error;
+                OutputText = string.Empty;
             }
         }
 
