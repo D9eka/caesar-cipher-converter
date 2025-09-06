@@ -1,12 +1,12 @@
-﻿using Lab1.Services.Message;
-using Microsoft.UI;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using System;
+using Lab1.Services.Message;
 
 namespace Lab1.Converters
 {
-    public class MessageTypeToBrushConverter : IValueConverter
+    public class MessageTypeToBrushBackgroundConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
@@ -14,15 +14,16 @@ namespace Lab1.Converters
             {
                 switch (type)
                 {
-                    case MessageType.Error:
-                        return new SolidColorBrush(Colors.IndianRed);   // красный
                     case MessageType.Warning:
-                        return new SolidColorBrush(Colors.Goldenrod);   // жёлтый/оранжевый
+                        return (SolidColorBrush)Application.Current.Resources["WarningBackgroundBrush"];
+                    case MessageType.Error:
+                        return (SolidColorBrush)Application.Current.Resources["ErrorBackgroundBrush"];
                     default:
-                        return new SolidColorBrush(Colors.Transparent);
+                        return new SolidColorBrush(Microsoft.UI.Colors.Transparent);
                 }
             }
-            return new SolidColorBrush(Colors.Transparent);
+
+            return new SolidColorBrush(Microsoft.UI.Colors.Transparent);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)

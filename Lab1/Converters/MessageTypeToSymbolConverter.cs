@@ -1,4 +1,5 @@
 ﻿using Lab1.Services.Message;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
 using System;
 
@@ -12,12 +13,12 @@ namespace Lab1.Converters
             {
                 return type switch
                 {
-                    MessageType.Error => "✖",   // крестик U+2716
-                    MessageType.Warning => "⚠", // предупреждение U+26A0
-                    _ => string.Empty
+                    MessageType.Error => Symbol.Cancel,       // крестик
+                    MessageType.Warning => Symbol.Repair,    // предупреждение
+                    _ => Symbol.Help                        // нейтральная иконка
                 };
             }
-            return string.Empty;
+            return Symbol.Help;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)
