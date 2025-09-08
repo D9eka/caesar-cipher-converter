@@ -15,10 +15,14 @@ namespace Lab1.Services.Input
                 || alphabet.CharsToReplace.ContainsKey(c));
 
             if (validChars == 0)
-                return InputValidationResult.Error("Все символы не соответствуют выбранному алфавиту.");
+                return InputValidationResult.Error("Все символы не соответствуют выбранному алфавиту");
 
-            if (validChars < input.Length)
-                return InputValidationResult.Warning("Некоторые символы не соответствуют алфавиту и будут пропущены.");
+            var validCharsWithSpace = input.Count(c =>
+                c >= (char)alphabet.StartCharIndex && c <= (char)alphabet.EndCharIndex
+                || alphabet.CharsToReplace.ContainsKey(c) || c == ' ');
+
+            if (validCharsWithSpace < input.Length)
+                return InputValidationResult.Warning("Некоторые символы не соответствуют алфавиту и будут пропущены");
 
             return InputValidationResult.Success();
         }
