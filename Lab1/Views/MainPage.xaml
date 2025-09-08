@@ -61,6 +61,24 @@
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
+            <VisualStateGroup x:Name="VisibilityStates">
+                <VisualState x:Name="ShiftComboBoxVisible">
+                    <VisualState.Setters>
+                        <Setter Target="shiftComboBox.Visibility" Value="Visible"/>
+                        <Setter Target="selectedOperationComboBoxWidth.Width" Value="*"/>
+                        <Setter Target="selectedOperationComboBox.Margin" Value="0,0,10,0"/>
+                        <Setter Target="shiftComboBoxWidth.Width" Value="*"/>
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="ShiftComboBoxHidden">
+                    <VisualState.Setters>
+                        <Setter Target="shiftComboBox.Visibility" Value="Collapsed"/>
+                        <Setter Target="selectedOperationComboBoxWidth.Width" Value="2*"/>
+                        <Setter Target="selectedOperationComboBox.Margin" Value="0,0,0,0"/>
+                        <Setter Target="shiftComboBoxWidth.Width" Value="0"/>
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
 
         <!-- ScrollViewer для узких экранов -->
@@ -200,8 +218,8 @@
                     <Grid Grid.Row="3" Margin="0,10,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition x:Name="selectedOperationComboBoxWidth" Width="*"/>
+                            <ColumnDefinition x:Name="shiftComboBoxWidth" Width="*"/>
                         </Grid.ColumnDefinitions>
                         <ComboBox Header="Алфавит"
                                   ItemsSource="{Binding Alphabets}"
@@ -209,13 +227,13 @@
                                   SelectedItem="{Binding SelectedAlphabet, Mode=TwoWay}"
                                   Style="{StaticResource ComboBoxStyle}"
                                   Grid.Column="0" Margin="0,0,10,0"/>
-                        <ComboBox Header="Операция"
+                        <ComboBox x:Name="selectedOperationComboBox" Header="Операция"
                                   ItemsSource="{Binding Operations}"
                                   DisplayMemberPath="UiName"
                                   SelectedItem="{Binding SelectedOperation, Mode=TwoWay}"
                                   Style="{StaticResource ComboBoxStyle}"
                                   Grid.Column="1" Margin="0,0,10,0"/>
-                        <ComboBox Header="Сдвиг"
+                        <ComboBox x:Name="shiftComboBox" Header="Сдвиг"
                                   ItemsSource="{Binding Shifts}"
                                   SelectedItem="{Binding SelectedShift, Mode=TwoWay}"
                                   Visibility="{Binding ShiftVisibility}"
@@ -266,13 +284,13 @@
                     </ScrollViewer>
 
                     <!-- OutputShift блок -->
-                    <Grid Grid.Row="3" Visibility="{Binding OutputShiftVisibility}" Margin="0,10,0,0">
+                    <Grid Grid.Row="3" Margin="0,10,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <Button Grid.Column="0" Content="Копировать результат" Command="{Binding CopyCommand}" Margin="0,10,8,0" Style="{StaticResource PrimaryButtonStyle}"/>
-                        <Button Grid.Column="1" Content="{Binding OutputShiftLabel}" Command="{Binding CopyShiftCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
+                        <Button Grid.Column="1" Content="{Binding OutputShiftLabel}" Command="{Binding CopyShiftCommand}" Visibility="{Binding OutputShiftVisibility}" Style="{StaticResource PrimaryButtonStyle}"/>
                     </Grid>
                 </Grid>
             </Border>

@@ -8,7 +8,7 @@ namespace Lab1
         public MainPage()
         {
             this.InitializeComponent();
-            this.DataContext = new MainViewModel();
+            this.DataContext = new MainViewModel(this);
         }
     }
 }

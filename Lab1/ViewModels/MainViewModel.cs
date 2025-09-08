@@ -6,15 +6,18 @@ using Lab1.Services.Input;
 using Lab1.Services.Message;
 using Lab1.ViewModels.Base;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Lab1.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
+        private readonly Page _page;
         private readonly IMessageService _messages;
         private readonly IDataInstaller _dataInstaller;
         private readonly InputValidator _validator;
@@ -94,7 +97,7 @@ namespace Lab1.ViewModels
 
         public Visibility ShiftVisibility { get; private set; } = Visibility.Visible;
 
-        public Visibility OutputShiftVisibility => !string.IsNullOrWhiteSpace(OutputText) ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility OutputShiftVisibility => !string.IsNullOrWhiteSpace(OutputText) && _selectedOperation.Type != OperationType.Decode ? Visibility.Visible : Visibility.Collapsed;
 
         public string ErrorMessage => _messages.Message;
         public MessageType ErrorType => _messages.Type;
@@ -105,8 +108,9 @@ namespace Lab1.ViewModels
         public ICommand CopyCommand { get; }
         public ICommand CopyShiftCommand { get; }
 
-        public MainViewModel()
+        public MainViewModel(Page page)
         {
+            _page = page;
             _messages = new MessageService();
             _dataInstaller = new DefaultDataInstaller();
             _validator = new InputValidator();
@@ -252,6 +256,7 @@ namespace Lab1.ViewModels
                 ? Visibility.Visible
                 : Visibility.Collapsed;
             OnPropertyChanged(nameof(ShiftVisibility));
+            VisualStateManager.GoToState(_page, ShiftVisibility == Visibility.Visible ? "ShiftComboBoxVisible" : "ShiftComboBoxHidden", true);
         }
     }
 }
