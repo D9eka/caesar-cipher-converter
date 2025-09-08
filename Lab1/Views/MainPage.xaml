@@ -14,6 +14,7 @@
         <conv:MessageTypeToBrushBackgroundConverter x:Key="MessageTypeToBrushBackgroundConverter"/>
         <conv:MessageTypeToBrushForegroundConverter x:Key="MessageTypeToBrushForegroundConverter"/>
         <conv:MessageTypeToSymbolConverter x:Key="MessageTypeToSymbolConverter"/>
+
         <!-- Styles -->
         <Style x:Key="CardStyle" TargetType="Border">
             <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefault}"/>
@@ -64,66 +65,69 @@
 
         <!-- ScrollViewer для узких экранов -->
         <ScrollViewer x:Name="MainScrollViewer" Visibility="Collapsed" Padding="20" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <Grid x:Name="MainGridInScroll">
+            <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
                 <!-- Input Panel -->
-                <Border x:Name="InputPanelScroll" Grid.Row="0" Style="{StaticResource CardStyle}">
+                <Border Grid.Row="0" Style="{StaticResource CardStyle}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/> <!-- растяжение текстового поля -->
+                            <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Text="Ввод текста" Style="{StaticResource HeaderTextStyle}" Grid.Row="0"/>
-                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <TextBox x:Name="InputTextBoxScroll" 
-                                     Header="Текст для обработки" 
-                                     PlaceholderText="Введите текст или используйте кнопку 'Вставить'" 
-                                     TextWrapping="Wrap" 
-                                     AcceptsReturn="True" 
+                        <TextBlock Text="Ввод текста" Style="{StaticResource HeaderTextStyle}"/>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <TextBox Header="Текст для обработки"
+                                     PlaceholderText="Введите текст или используйте кнопку 'Вставить'"
+                                     TextWrapping="Wrap"
+                                     AcceptsReturn="True"
                                      Text="{Binding InputText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                         </ScrollViewer>
 
                         <Button Content="Вставить из буфера" Grid.Row="2" Command="{Binding PasteCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
 
-                        <Grid x:Name="ComboBoxesContainerScroll" Grid.Row="3" Margin="0,10,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="0"/>
-                                <ColumnDefinition Width="0"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <ComboBox x:Name="AlphabetComboBoxScroll" Header="Алфавит" ItemsSource="{Binding Alphabets}" DisplayMemberPath="UiName" SelectedItem="{Binding SelectedAlphabet, Mode=TwoWay}" Style="{StaticResource ComboBoxStyle}" Grid.Column="0" Grid.Row="0"/>
-                            <ComboBox x:Name="OperationComboBoxScroll" Header="Операция" ItemsSource="{Binding Operations}" DisplayMemberPath="UiName" SelectedItem="{Binding SelectedOperation, Mode=TwoWay}" Style="{StaticResource ComboBoxStyle}" Grid.Column="0" Grid.Row="1"/>
-                            <ComboBox x:Name="ShiftComboBoxScroll" Header="Сдвиг" ItemsSource="{Binding Shifts}" SelectedItem="{Binding SelectedShift, Mode=TwoWay}" Visibility="{Binding ShiftVisibility}" Style="{StaticResource ComboBoxStyle}" Grid.Column="0" Grid.Row="2"/>
-                        </Grid>
+                        <StackPanel Grid.Row="3" Spacing="10">
+                            <ComboBox Header="Алфавит"
+                                      ItemsSource="{Binding Alphabets}"
+                                      DisplayMemberPath="UiName"
+                                      SelectedItem="{Binding SelectedAlphabet, Mode=TwoWay}"
+                                      Style="{StaticResource ComboBoxStyle}"/>
+                            <ComboBox Header="Операция"
+                                      ItemsSource="{Binding Operations}"
+                                      DisplayMemberPath="UiName"
+                                      SelectedItem="{Binding SelectedOperation, Mode=TwoWay}"
+                                      Style="{StaticResource ComboBoxStyle}"/>
+                            <ComboBox Header="Сдвиг"
+                                      ItemsSource="{Binding Shifts}"
+                                      SelectedItem="{Binding SelectedShift, Mode=TwoWay}"
+                                      Visibility="{Binding ShiftVisibility}"
+                                      Style="{StaticResource ComboBoxStyle}"/>
+                        </StackPanel>
 
                         <Button Content="Выполнить" Grid.Row="4" Command="{Binding CalculateCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
                     </Grid>
                 </Border>
 
                 <!-- Output Panel -->
-                <Border x:Name="OutputPanelScroll" Grid.Row="1" Style="{StaticResource CardStyle}">
+                <Border Grid.Row="1" Style="{StaticResource CardStyle}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/> <!-- растяжение текстового поля -->
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Text="Результат" Style="{StaticResource HeaderTextStyle}" Grid.Row="0"/>
+                        <TextBlock Text="Результат" Style="{StaticResource HeaderTextStyle}"/>
+                        <!-- Ошибки -->
                         <Border Grid.Row="1"
                                 Background="{Binding ErrorType, Converter={StaticResource MessageTypeToBrushBackgroundConverter}}"
                                 BorderBrush="{Binding ErrorType, Converter={StaticResource MessageTypeToBrushBackgroundConverter}}"
@@ -132,41 +136,47 @@
                                 Padding="8"
                                 Margin="0,0,0,10"
                                 Visibility="{Binding ErrorVisibility}">
-                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <SymbolIcon Symbol="{Binding ErrorType, Converter={StaticResource MessageTypeToSymbolConverter}}" 
-                                            Foreground="{Binding ErrorType, Converter={StaticResource MessageTypeToBrushForegroundConverter}}" 
-                                            VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="{Binding ErrorType, Converter={StaticResource MessageTypeToSymbolConverter}}"
+                                            Foreground="{Binding ErrorType, Converter={StaticResource MessageTypeToBrushForegroundConverter}}"/>
                                 <TextBlock Text="{Binding ErrorMessage}"
                                            Foreground="{Binding ErrorType, Converter={StaticResource MessageTypeToBrushForegroundConverter}}"
-                                           TextWrapping="Wrap"
-                                           VerticalAlignment="Center"/>
+                                           TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
 
-                        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <TextBox x:Name="ResultTextBoxScroll" 
-                                     Header="Результат обработки" 
-                                     TextWrapping="Wrap" 
-                                     AcceptsReturn="True" 
-                                     IsReadOnly="True" 
+                        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                            <TextBox Header="Результат обработки"
+                                     TextWrapping="Wrap"
+                                     AcceptsReturn="True"
+                                     IsReadOnly="True"
                                      Text="{Binding OutputText}"/>
                         </ScrollViewer>
 
-                        <Button Content="Копировать в буфер" Grid.Row="3" Command="{Binding CopyCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
+                        <!-- OutputShift блок -->
+                        <Grid Grid.Row="3" Visibility="{Binding OutputShiftVisibility}" Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Content="Копировать результат" Command="{Binding CopyCommand}" Margin="0,10,8,0" Style="{StaticResource PrimaryButtonStyle}"/>
+                            <Button Grid.Column="1" Content="{Binding OutputShiftLabel}" Command="{Binding CopyShiftCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
+                        </Grid>
+
                     </Grid>
                 </Border>
             </Grid>
         </ScrollViewer>
 
         <!-- Основной Grid для широких экранов -->
-        <Grid x:Name="MainGrid" Visibility="Visible" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <Grid x:Name="MainGrid" Visibility="Visible">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <!-- Input Panel -->
-            <Border x:Name="InputPanel" Grid.Column="0" Style="{StaticResource CardStyle}">
+            <Border Grid.Column="0" Style="{StaticResource CardStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -176,22 +186,41 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Text="Ввод текста" Style="{StaticResource HeaderTextStyle}" Grid.Row="0"/>
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <TextBox x:Name="InputTextBox" Header="Текст для обработки" PlaceholderText="Введите текст или используйте кнопку 'Вставить'" TextWrapping="Wrap" AcceptsReturn="True" Text="{Binding InputText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Text="Ввод текста" Style="{StaticResource HeaderTextStyle}"/>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <TextBox Header="Текст для обработки"
+                                 PlaceholderText="Введите текст или используйте кнопку 'Вставить'"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 Text="{Binding InputText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     </ScrollViewer>
 
                     <Button Content="Вставить из буфера" Grid.Row="2" Command="{Binding PasteCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
 
-                    <Grid x:Name="ComboBoxesContainer" Grid.Row="3" Margin="0,10,0,0">
+                    <Grid Grid.Row="3" Margin="0,10,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <ComboBox x:Name="AlphabetComboBox" Header="Алфавит" ItemsSource="{Binding Alphabets}" DisplayMemberPath="UiName" SelectedItem="{Binding SelectedAlphabet, Mode=TwoWay}" Style="{StaticResource ComboBoxStyle}" Grid.Column="0" Margin="0,0,10,0"/>
-                        <ComboBox x:Name="OperationComboBox" Header="Операция" ItemsSource="{Binding Operations}" DisplayMemberPath="UiName" SelectedItem="{Binding SelectedOperation, Mode=TwoWay}" Style="{StaticResource ComboBoxStyle}" Grid.Column="1" Margin="0,0,10,0"/>
-                        <ComboBox x:Name="ShiftComboBox" Header="Сдвиг" ItemsSource="{Binding Shifts}" SelectedItem="{Binding SelectedShift, Mode=TwoWay}" Visibility="{Binding ShiftVisibility}" Style="{StaticResource ComboBoxStyle}" Grid.Column="2" Margin="0,0,10,0"/>
+                        <ComboBox Header="Алфавит"
+                                  ItemsSource="{Binding Alphabets}"
+                                  DisplayMemberPath="UiName"
+                                  SelectedItem="{Binding SelectedAlphabet, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxStyle}"
+                                  Grid.Column="0" Margin="0,0,10,0"/>
+                        <ComboBox Header="Операция"
+                                  ItemsSource="{Binding Operations}"
+                                  DisplayMemberPath="UiName"
+                                  SelectedItem="{Binding SelectedOperation, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxStyle}"
+                                  Grid.Column="1" Margin="0,0,10,0"/>
+                        <ComboBox Header="Сдвиг"
+                                  ItemsSource="{Binding Shifts}"
+                                  SelectedItem="{Binding SelectedShift, Mode=TwoWay}"
+                                  Visibility="{Binding ShiftVisibility}"
+                                  Style="{StaticResource ComboBoxStyle}"
+                                  Grid.Column="2" Margin="0"/>
                     </Grid>
 
                     <Button Content="Выполнить" Grid.Row="4" Command="{Binding CalculateCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
@@ -199,16 +228,18 @@
             </Border>
 
             <!-- Output Panel -->
-            <Border x:Name="OutputPanel" Grid.Column="1" Style="{StaticResource CardStyle}">
+            <Border Grid.Column="1" Style="{StaticResource CardStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Text="Результат" Style="{StaticResource HeaderTextStyle}" Grid.Row="0"/>
+                    <TextBlock Text="Результат" Style="{StaticResource HeaderTextStyle}"/>
+                    <!-- Ошибки -->
                     <Border Grid.Row="1"
                             Background="{Binding ErrorType, Converter={StaticResource MessageTypeToBrushBackgroundConverter}}"
                             BorderBrush="{Binding ErrorType, Converter={StaticResource MessageTypeToBrushBackgroundConverter}}"
@@ -217,22 +248,32 @@
                             Padding="8"
                             Margin="0,0,0,10"
                             Visibility="{Binding ErrorVisibility}">
-                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                            <SymbolIcon Symbol="{Binding ErrorType, Converter={StaticResource MessageTypeToSymbolConverter}}" 
-                                        Foreground="{Binding ErrorType, Converter={StaticResource MessageTypeToBrushForegroundConverter}}" 
-                                        VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="{Binding ErrorType, Converter={StaticResource MessageTypeToSymbolConverter}}"
+                                        Foreground="{Binding ErrorType, Converter={StaticResource MessageTypeToBrushForegroundConverter}}"/>
                             <TextBlock Text="{Binding ErrorMessage}"
                                        Foreground="{Binding ErrorType, Converter={StaticResource MessageTypeToBrushForegroundConverter}}"
-                                       TextWrapping="Wrap"
-                                       VerticalAlignment="Center"/>
+                                       TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
 
-                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <TextBox x:Name="ResultTextBox" Header="Результат обработки" TextWrapping="Wrap" AcceptsReturn="True" IsReadOnly="True" Text="{Binding OutputText}"/>
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <TextBox Header="Результат обработки"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 IsReadOnly="True"
+                                 Text="{Binding OutputText}"/>
                     </ScrollViewer>
 
-                    <Button Content="Копировать в буфер" Grid.Row="3" Command="{Binding CopyCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
+                    <!-- OutputShift блок -->
+                    <Grid Grid.Row="3" Visibility="{Binding OutputShiftVisibility}" Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="Копировать результат" Command="{Binding CopyCommand}" Margin="0,10,8,0" Style="{StaticResource PrimaryButtonStyle}"/>
+                        <Button Grid.Column="1" Content="{Binding OutputShiftLabel}" Command="{Binding CopyShiftCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>

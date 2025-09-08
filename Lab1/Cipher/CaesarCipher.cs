@@ -19,9 +19,9 @@ namespace Lab1.Cipher
                 if (c >= (char)alphabet.StartCharIndex && c <= (char)alphabet.EndCharIndex)
                 {
                     int pos = c - alphabet.StartCharIndex;
-                    int new_pos = (pos + shift) % size;
-                    char new_c = (char)(alphabet.StartCharIndex + new_pos);
-                    sb.Append(new_c);
+                    int newPos = (pos + shift) % size;
+                    char newC = (char)(alphabet.StartCharIndex + newPos);
+                    sb.Append(newC);
                 }
             }
 
@@ -44,7 +44,7 @@ namespace Lab1.Cipher
 
         private static double ComputeSumSq(string text, Alphabet alphabet)
         {
-            Dictionary<char, int> counts = new Dictionary<char, int>();
+            Dictionary<char, int> counts = new();
             int total = 0;
 
             foreach (char c in text)
@@ -57,22 +57,22 @@ namespace Lab1.Cipher
                 }
             }
 
-            Dictionary<char, double> obs = new Dictionary<char, double>();
+            Dictionary<char, double> obs = new();
             foreach (var kv in alphabet.Frequencies)
             {
                 char ch = kv.Key;
                 obs[ch] = counts.ContainsKey(ch) ? (double)counts[ch] / total : 0.0;
             }
 
-            double sum_sq = 0.0;
+            double sumSq = 0.0;
             foreach (var kv in alphabet.Frequencies)
             {
                 double exp = kv.Value;
                 double ob = obs[kv.Key];
-                sum_sq += (ob - exp) * (ob - exp);
+                sumSq += (ob - exp) * (ob - exp);
             }
 
-            return sum_sq;
+            return sumSq;
         }
 
         public static string Decode(string text, Alphabet alphabet, int shift)
@@ -85,24 +85,26 @@ namespace Lab1.Cipher
             return Group(Shift(text, alphabet, shift));
         }
 
-        public static string Hack(string text, Alphabet alphabet)
+        public record HackResult(string Text, int Shift);
+
+        public static HackResult Hack(string text, Alphabet alphabet)
         {
-            double min_sum = double.MaxValue;
-            int best_k = 0;
+            double minSum = double.MaxValue;
+            int bestShift = 0;
             int size = alphabet.MaxShift;
 
             for (int k = 0; k < size; k++)
             {
                 string decoded = Shift(text, alphabet, -k);
-                double sum_sq = ComputeSumSq(decoded, alphabet);
-                if (sum_sq < min_sum)
+                double sumSq = ComputeSumSq(decoded, alphabet);
+                if (sumSq < minSum)
                 {
-                    min_sum = sum_sq;
-                    best_k = k;
+                    minSum = sumSq;
+                    bestShift = k;
                 }
             }
 
-            return Group(Shift(text, alphabet, -best_k));
+            return new HackResult(Group(Shift(text, alphabet, -bestShift)), bestShift);
         }
     }
 }

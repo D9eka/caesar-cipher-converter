@@ -25,6 +25,7 @@ namespace Lab1.ViewModels
         private int _selectedShift;
         private string _inputText = string.Empty;
         private string _outputText = string.Empty;
+        private int? _outputShift;
 
         public List<Alphabet> Alphabets { get; }
         public List<Operation> Operations { get; }
@@ -74,11 +75,26 @@ namespace Lab1.ViewModels
             set
             {
                 SetField(ref _outputText, value);
+                OnPropertyChanged(nameof(OutputShiftVisibility));
                 CommandManager.InvalidateRequerySuggested();
             }
         }
 
+        public int? OutputShift
+        {
+            get => _outputShift;
+            set
+            {
+                SetField(ref _outputShift, value);
+                OnPropertyChanged(nameof(OutputShiftLabel));
+            }
+        }
+
+        public string OutputShiftLabel => OutputShift.HasValue ? $"Сдвиг: {OutputShift}" : string.Empty;
+
         public Visibility ShiftVisibility { get; private set; } = Visibility.Visible;
+
+        public Visibility OutputShiftVisibility => !string.IsNullOrWhiteSpace(OutputText) ? Visibility.Visible : Visibility.Collapsed;
 
         public string ErrorMessage => _messages.Message;
         public MessageType ErrorType => _messages.Type;
@@ -87,6 +103,7 @@ namespace Lab1.ViewModels
         public ICommand PasteCommand { get; }
         public ICommand CalculateCommand { get; }
         public ICommand CopyCommand { get; }
+        public ICommand CopyShiftCommand { get; }
 
         public MainViewModel()
         {
@@ -104,11 +121,13 @@ namespace Lab1.ViewModels
             PasteCommand = new RelayCommand(ExecutePaste);
             CalculateCommand = new RelayCommand(ExecuteCalculate, CanExecuteCalculate);
             CopyCommand = new RelayCommand(ExecuteCopy, CanExecuteCopy);
+            CopyShiftCommand = new RelayCommand(ExecuteCopyShift, CanExecuteCopyShift);
 
             CommandManager.RequerySuggested += (s, e) =>
             {
                 ((RelayCommand)CalculateCommand).RaiseCanExecuteChanged();
                 ((RelayCommand)CopyCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)CopyShiftCommand).RaiseCanExecuteChanged();
             };
         }
 
@@ -142,24 +161,22 @@ namespace Lab1.ViewModels
                 {
                     _messages.ShowError(result.Message);
                     OutputText = string.Empty;
+                    OutputShift = null;
                 }
                 else
                 {
                     OutputText = ApplyCipher();
                     if (result.Type == MessageType.Warning)
-                    {
                         _messages.ShowWarning(result.Message);
-                    }
                     else
-                    {
                         _messages.Clear();
-                    }
                 }
             }
             catch (Exception ex)
             {
                 _messages.ShowError($"Ошибка при обработке: {ex.Message}");
                 OutputText = string.Empty;
+                OutputShift = null;
             }
             finally
             {
@@ -169,13 +186,24 @@ namespace Lab1.ViewModels
 
         private string ApplyCipher()
         {
-            return _selectedOperation.Type switch
+            switch (_selectedOperation.Type)
             {
-                OperationType.Decode => CaesarCipher.Decode(InputText, SelectedAlphabet, SelectedShift),
-                OperationType.Encode => CaesarCipher.Encode(InputText, SelectedAlphabet, SelectedShift),
-                OperationType.Hack => CaesarCipher.Hack(InputText, SelectedAlphabet),
-                _ => throw new InvalidOperationException("Неизвестный тип операции")
-            };
+                case OperationType.Decode:
+                    OutputShift = SelectedShift;
+                    return CaesarCipher.Decode(InputText, SelectedAlphabet, SelectedShift);
+
+                case OperationType.Encode:
+                    OutputShift = SelectedShift;
+                    return CaesarCipher.Encode(InputText, SelectedAlphabet, SelectedShift);
+
+                case OperationType.Hack:
+                    var result = CaesarCipher.Hack(InputText, SelectedAlphabet);
+                    OutputShift = result.Shift;
+                    return result.Text;
+
+                default:
+                    throw new InvalidOperationException("Неизвестный тип операции");
+            }
         }
 
         private bool CanExecuteCalculate() => !string.IsNullOrWhiteSpace(InputText);
@@ -194,6 +222,22 @@ namespace Lab1.ViewModels
         }
 
         private bool CanExecuteCopy() => !string.IsNullOrWhiteSpace(OutputText);
+
+        private void ExecuteCopyShift()
+        {
+            try
+            {
+                if (OutputShift.HasValue)
+                    _clipboard.Copy(OutputShift.Value.ToString());
+            }
+            catch (Exception ex)
+            {
+                _messages.ShowError($"Ошибка при копировании сдвига: {ex.Message}");
+                RefreshErrorBindings();
+            }
+        }
+
+        private bool CanExecuteCopyShift() => OutputShift.HasValue;
 
         private void UpdateShifts()
         {
