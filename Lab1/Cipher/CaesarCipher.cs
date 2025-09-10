@@ -1,110 +1,132 @@
-﻿using Lab1.Models.Alphabets;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Lab1.Models.Alphabets;
 
 namespace Lab1.Cipher
 {
     public static class CaesarCipher
     {
-        private static string Shift(string text, Alphabet alphabet, int shift)
+        public static string Encrypt(string plaintext, Alphabet alphabet, int shiftAmount)
         {
-            text = text.ToLower();
-            StringBuilder sb = new StringBuilder();
-            int size = alphabet.MaxShift;
-            shift = (shift % size + size) % size;
+            string normalizedText = NormalizeText(plaintext, alphabet);
+            Func<int, int, int> encryptOperation = (textPos, shift) => (textPos + shift) % alphabet.MaxShift;
+            string ciphertext = ShiftText(normalizedText, alphabet, shiftAmount, encryptOperation);
+            return FormatInGroups(ciphertext);
+        }
 
-            foreach (char original in text)
+        public static string Decrypt(string ciphertext, Alphabet alphabet, int shiftAmount)
+        {
+            string normalizedText = NormalizeText(ciphertext, alphabet);
+            Func<int, int, int> decryptOperation = (textPos, shift) => (textPos - shift + alphabet.MaxShift) % alphabet.MaxShift;
+            string plaintext = ShiftText(normalizedText, alphabet, shiftAmount, decryptOperation);
+            return FormatInGroups(plaintext);
+        }
+
+        public static (string Result, int Shift) Cryptanalyze(string ciphertext, Alphabet alphabet)
+        {
+            string normalizedCiphertext = NormalizeText(ciphertext, alphabet);
+            double bestDeviationScore = double.MaxValue;
+            int bestShift = 0;
+
+            for (int shift = 0; shift < alphabet.MaxShift; shift++)
             {
-                char c = alphabet.CharsToReplace.TryGetValue(original, out char rep) ? rep : original;
-                if (c >= (char)alphabet.StartCharIndex && c <= (char)alphabet.EndCharIndex)
+                Func<int, int, int> decryptOperation = (textPos, s) => (textPos - s + alphabet.MaxShift) % alphabet.MaxShift;
+                string candidatePlaintext = ShiftText(normalizedCiphertext, alphabet, shift, decryptOperation);
+                double deviationScore = ComputeFrequencySquaredDeviation(candidatePlaintext, alphabet);
+
+                if (deviationScore < bestDeviationScore)
                 {
-                    int pos = c - alphabet.StartCharIndex;
-                    int newPos = (pos + shift) % size;
-                    char newC = (char)(alphabet.StartCharIndex + newPos);
-                    sb.Append(newC);
+                    bestDeviationScore = deviationScore;
+                    bestShift = shift;
                 }
             }
 
-            return sb.ToString();
+            return (Decrypt(normalizedCiphertext, alphabet, bestShift), bestShift);
         }
 
-        private static string Group(string s)
+        private static string NormalizeText(string input, Alphabet alphabet)
         {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < s.Length; i++)
+            string lowercased = input.ToLower();
+
+            if (alphabet.CharsToReplace != null && alphabet.CharsToReplace.Count > 0)
+            {
+                foreach (var replacement in alphabet.CharsToReplace)
+                    lowercased = lowercased.Replace(replacement.Key.ToString(), replacement.Value.ToString());
+            }
+
+            var filteredBuilder = new StringBuilder(lowercased.Length);
+            for (int i = 0; i < lowercased.Length; i++)
+            {
+                char currentChar = lowercased[i];
+                if (currentChar >= alphabet.StartCharIndex && currentChar <= alphabet.EndCharIndex)
+                    filteredBuilder.Append(currentChar);
+            }
+
+            return filteredBuilder.ToString();
+        }
+
+        private static string ShiftText(string inputText, Alphabet alphabet, int shiftAmount, Func<int, int, int> shiftOperation)
+        {
+            shiftAmount = (shiftAmount % alphabet.MaxShift + alphabet.MaxShift) % alphabet.MaxShift;
+            var resultBuilder = new StringBuilder(inputText.Length);
+
+            foreach (char currentChar in inputText)
+            {
+                if (currentChar >= alphabet.StartCharIndex && currentChar <= alphabet.EndCharIndex)
+                {
+                    int textPos = currentChar - alphabet.StartCharIndex;
+                    int newPos = shiftOperation(textPos, shiftAmount) + alphabet.StartCharIndex;
+                    resultBuilder.Append((char)newPos);
+                }
+            }
+
+            return resultBuilder.ToString();
+        }
+
+        private static string FormatInGroups(string text)
+        {
+            var groupedBuilder = new StringBuilder();
+            for (int i = 0; i < text.Length; i++)
             {
                 if (i > 0 && i % 5 == 0)
-                {
-                    sb.Append(' ');
-                }
-                sb.Append(s[i]);
+                    groupedBuilder.Append(' ');
+                groupedBuilder.Append(text[i]);
             }
-            return sb.ToString();
+            return groupedBuilder.ToString();
         }
 
-        private static double ComputeSumSq(string text, Alphabet alphabet)
+        private static double ComputeFrequencySquaredDeviation(string text, Alphabet alphabet)
         {
-            Dictionary<char, int> counts = new();
-            int total = 0;
+            var characterCounts = new Dictionary<char, int>();
+            int totalCharacters = 0;
 
-            foreach (char c in text)
+            foreach (char currentChar in text)
             {
-                if (alphabet.Frequencies.ContainsKey(c))
+                if (alphabet.Frequencies.ContainsKey(currentChar))
                 {
-                    if (!counts.ContainsKey(c)) counts[c] = 0;
-                    counts[c]++;
-                    total++;
+                    if (!characterCounts.ContainsKey(currentChar)) characterCounts[currentChar] = 0;
+                    characterCounts[currentChar]++;
+                    totalCharacters++;
                 }
             }
 
-            Dictionary<char, double> obs = new();
-            foreach (var kv in alphabet.Frequencies)
+            var observedFrequencies = new Dictionary<char, double>();
+            foreach (var freqPair in alphabet.Frequencies)
             {
-                char ch = kv.Key;
-                obs[ch] = counts.ContainsKey(ch) ? (double)counts[ch] / total : 0.0;
+                char ch = freqPair.Key;
+                observedFrequencies[ch] = characterCounts.ContainsKey(ch) ? (double)characterCounts[ch] / totalCharacters : 0.0;
             }
 
-            double sumSq = 0.0;
-            foreach (var kv in alphabet.Frequencies)
+            double squaredDeviationSum = 0.0;
+            foreach (var freqPair in alphabet.Frequencies)
             {
-                double exp = kv.Value;
-                double ob = obs[kv.Key];
-                sumSq += (ob - exp) * (ob - exp);
+                double expectedFreq = freqPair.Value;
+                double observedFreq = observedFrequencies[freqPair.Key];
+                squaredDeviationSum += (observedFreq - expectedFreq) * (observedFreq - expectedFreq);
             }
 
-            return sumSq;
-        }
-
-        public static string Decode(string text, Alphabet alphabet, int shift)
-        {
-            return Group(Shift(text, alphabet, -shift));
-        }
-
-        public static string Encode(string text, Alphabet alphabet, int shift)
-        {
-            return Group(Shift(text, alphabet, shift));
-        }
-
-        public record HackResult(string Text, int Shift);
-
-        public static HackResult Hack(string text, Alphabet alphabet)
-        {
-            double minSum = double.MaxValue;
-            int bestShift = 0;
-            int size = alphabet.MaxShift;
-
-            for (int k = 0; k < size; k++)
-            {
-                string decoded = Shift(text, alphabet, -k);
-                double sumSq = ComputeSumSq(decoded, alphabet);
-                if (sumSq < minSum)
-                {
-                    minSum = sumSq;
-                    bestShift = k;
-                }
-            }
-
-            return new HackResult(Group(Shift(text, alphabet, -bestShift)), bestShift);
+            return squaredDeviationSum;
         }
     }
 }

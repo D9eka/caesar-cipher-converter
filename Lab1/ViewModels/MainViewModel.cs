@@ -97,7 +97,7 @@ namespace Lab1.ViewModels
 
         public Visibility ShiftVisibility { get; private set; } = Visibility.Visible;
 
-        public Visibility OutputShiftVisibility => !string.IsNullOrWhiteSpace(OutputText) && _selectedOperation.Type != OperationType.Decode ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility OutputShiftVisibility => !string.IsNullOrWhiteSpace(OutputText) && _selectedOperation.Type != OperationType.Decrypt ? Visibility.Visible : Visibility.Collapsed;
 
         public string ErrorMessage => _messages.Message;
         public MessageType ErrorType => _messages.Type;
@@ -192,18 +192,18 @@ namespace Lab1.ViewModels
         {
             switch (_selectedOperation.Type)
             {
-                case OperationType.Decode:
+                case OperationType.Decrypt:
                     OutputShift = SelectedShift;
-                    return CaesarCipher.Decode(InputText, SelectedAlphabet, SelectedShift);
+                    return CaesarCipher.Decrypt(InputText, SelectedAlphabet, SelectedShift);
 
-                case OperationType.Encode:
+                case OperationType.Encrypt:
                     OutputShift = SelectedShift;
-                    return CaesarCipher.Encode(InputText, SelectedAlphabet, SelectedShift);
+                    return CaesarCipher.Encrypt(InputText, SelectedAlphabet, SelectedShift);
 
-                case OperationType.Hack:
-                    var result = CaesarCipher.Hack(InputText, SelectedAlphabet);
+                case OperationType.Cryptanalyze:
+                    var result = CaesarCipher.Cryptanalyze(InputText, SelectedAlphabet);
                     OutputShift = result.Shift;
-                    return result.Text;
+                    return result.Result;
 
                 default:
                     throw new InvalidOperationException("Неизвестный тип операции");
@@ -252,7 +252,7 @@ namespace Lab1.ViewModels
 
         private void UpdateShiftVisibility()
         {
-            ShiftVisibility = SelectedOperation.Type != OperationType.Hack
+            ShiftVisibility = SelectedOperation.Type != OperationType.Cryptanalyze
                 ? Visibility.Visible
                 : Visibility.Collapsed;
             OnPropertyChanged(nameof(ShiftVisibility));
