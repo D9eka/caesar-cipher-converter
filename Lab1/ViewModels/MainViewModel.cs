@@ -159,7 +159,7 @@ namespace Lab1.ViewModels
         {
             try
             {
-                var result = _validator.Validate(InputText, SelectedAlphabet);
+                var result = _validator.Validate(InputText.ToLower(), SelectedAlphabet);
 
                 if (!result.IsValid)
                 {

@@ -8,7 +8,7 @@ namespace Lab1.Cipher
     {
         private static string Shift(string text, Alphabet alphabet, int shift)
         {
-            text = text.ToLowerInvariant();
+            text = text.ToLower();
             StringBuilder sb = new StringBuilder();
             int size = alphabet.MaxShift;
             shift = (shift % size + size) % size;
