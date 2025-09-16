@@ -1,8 +1,7 @@
-﻿namespace Lab1.Models.Alphabets
+﻿namespace Lab1.Models.Alphabets;
+
+public enum AlphabetType
 {
-    public enum AlphabetType
-    {
-        Russian,
-        English
-    }
+    Russian,
+    English
 }

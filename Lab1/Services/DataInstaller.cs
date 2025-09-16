@@ -2,27 +2,26 @@
 using Lab1.Models.Operations;
 using System.Collections.Generic;
 
-namespace Lab1.Services
+namespace Lab1.Services;
+
+public interface IDataInstaller
 {
-    public interface IDataInstaller
-    {
-        List<Alphabet> GetAlphabets();
-        List<Operation> GetOperations();
-    }
+    List<Alphabet> GetAlphabets();
+    List<Operation> GetOperations();
+}
 
-    public class DefaultDataInstaller : IDataInstaller
+public class DefaultDataInstaller : IDataInstaller
+{
+    public List<Alphabet> GetAlphabets() => new()
     {
-        public List<Alphabet> GetAlphabets() => new()
-        {
-            AlphabetFactory.CreateRussianAlphabet(),
-            AlphabetFactory.CreateEnglishAlphabet()
-        };
+        AlphabetFactory.CreateRussianAlphabet(),
+        AlphabetFactory.CreateEnglishAlphabet()
+    };
 
-        public List<Operation> GetOperations() => new()
-        {
-            new Operation(OperationType.Encrypt, "Зашифровать"),
-            new Operation(OperationType.Decrypt, "Расшифровать"),
-            new Operation(OperationType.Cryptanalyze, "Взломать")
-        };
-    }
+    public List<Operation> GetOperations() => new()
+    {
+        new Operation(OperationType.Encrypt, "Зашифровать"),
+        new Operation(OperationType.Decrypt, "Расшифровать"),
+        new Operation(OperationType.Cryptanalyze, "Взломать")
+    };
 }

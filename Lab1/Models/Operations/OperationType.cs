@@ -1,9 +1,8 @@
-﻿namespace Lab1.Models.Operations
+﻿namespace Lab1.Models.Operations;
+
+public enum OperationType
 {
-    public enum OperationType
-    {
-        Decrypt,
-        Encrypt,
-        Cryptanalyze
-    }
+    Decrypt,
+    Encrypt,
+    Cryptanalyze
 }

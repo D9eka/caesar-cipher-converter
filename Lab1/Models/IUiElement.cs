@@ -1,7 +1,6 @@
-﻿namespace Lab1.Models
+﻿namespace Lab1.Models;
+
+public interface IUiElement
 {
-    public interface IUiElement
-    {
-        public string UiName { get; }
-    }
+    public string UiName { get; }
 }

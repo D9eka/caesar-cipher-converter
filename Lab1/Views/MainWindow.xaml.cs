@@ -1,13 +1,12 @@
 using Microsoft.UI.Xaml;
 
-namespace Lab1
+namespace Lab1;
+
+public sealed partial class MainWindow : Window
 {
-    public sealed partial class MainWindow : Window
+    public MainWindow()
     {
-        public MainWindow()
-        {
-            this.InitializeComponent();
-            this.Content = new MainPage();
-        }
+        this.InitializeComponent();
+        this.Content = new MainPage();
     }
 }

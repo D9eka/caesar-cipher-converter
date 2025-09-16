@@ -1,15 +1,14 @@
-﻿namespace Lab1.Models.Operations
+﻿namespace Lab1.Models.Operations;
+
+public class Operation : IUiElement
 {
-    public class Operation : IUiElement
+    public OperationType Type { get; private set; }
+    public string UiName { get; private set; }
+
+    public Operation(OperationType type, string uiName)
     {
-        public OperationType Type { get; private set; }
-        public string UiName { get; private set; }
-
-        public Operation(OperationType type, string uiName)
-        {
-            Type = type;
-            UiName = uiName;
-        }
-
+        Type = type;
+        UiName = uiName;
     }
+
 }

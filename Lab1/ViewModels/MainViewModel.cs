@@ -11,252 +11,250 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
-using static System.Net.Mime.MediaTypeNames;
 
-namespace Lab1.ViewModels
+namespace Lab1.ViewModels;
+
+public class MainViewModel : ViewModelBase
 {
-    public class MainViewModel : ViewModelBase
+    private readonly Page _page;
+    private readonly IMessageService _messages;
+    private readonly IDataInstaller _dataInstaller;
+    private readonly InputValidator _validator;
+    private readonly IClipboardService _clipboard;
+
+    private Alphabet _selectedAlphabet;
+    private Operation _selectedOperation;
+    private int _selectedShift;
+    private string _inputText = string.Empty;
+    private string _outputText = string.Empty;
+    private int? _outputShift;
+
+    public List<Alphabet> Alphabets { get; }
+    public List<Operation> Operations { get; }
+    public List<int> Shifts { get; private set; }
+
+    public Alphabet SelectedAlphabet
     {
-        private readonly Page _page;
-        private readonly IMessageService _messages;
-        private readonly IDataInstaller _dataInstaller;
-        private readonly InputValidator _validator;
-        private readonly IClipboardService _clipboard;
-
-        private Alphabet _selectedAlphabet;
-        private Operation _selectedOperation;
-        private int _selectedShift;
-        private string _inputText = string.Empty;
-        private string _outputText = string.Empty;
-        private int? _outputShift;
-
-        public List<Alphabet> Alphabets { get; }
-        public List<Operation> Operations { get; }
-        public List<int> Shifts { get; private set; }
-
-        public Alphabet SelectedAlphabet
+        get => _selectedAlphabet;
+        set
         {
-            get => _selectedAlphabet;
-            set
-            {
-                SetField(ref _selectedAlphabet, value);
-                UpdateShifts();
-                CommandManager.InvalidateRequerySuggested();
-            }
+            SetField(ref _selectedAlphabet, value);
+            UpdateShifts();
+            CommandManager.InvalidateRequerySuggested();
         }
+    }
 
-        public Operation SelectedOperation
+    public Operation SelectedOperation
+    {
+        get => _selectedOperation;
+        set
         {
-            get => _selectedOperation;
-            set
-            {
-                SetField(ref _selectedOperation, value);
-                UpdateShiftVisibility();
-                CommandManager.InvalidateRequerySuggested();
-            }
+            SetField(ref _selectedOperation, value);
+            UpdateShiftVisibility();
+            CommandManager.InvalidateRequerySuggested();
         }
+    }
 
-        public int SelectedShift
+    public int SelectedShift
+    {
+        get => _selectedShift;
+        set => SetField(ref _selectedShift, value);
+    }
+
+    public string InputText
+    {
+        get => _inputText;
+        set
         {
-            get => _selectedShift;
-            set => SetField(ref _selectedShift, value);
+            SetField(ref _inputText, value);
+            CommandManager.InvalidateRequerySuggested();
         }
+    }
 
-        public string InputText
+    public string OutputText
+    {
+        get => _outputText;
+        set
         {
-            get => _inputText;
-            set
-            {
-                SetField(ref _inputText, value);
-                CommandManager.InvalidateRequerySuggested();
-            }
+            SetField(ref _outputText, value);
+            OnPropertyChanged(nameof(OutputShiftVisibility));
+            CommandManager.InvalidateRequerySuggested();
         }
+    }
 
-        public string OutputText
+    public int? OutputShift
+    {
+        get => _outputShift;
+        set
         {
-            get => _outputText;
-            set
-            {
-                SetField(ref _outputText, value);
-                OnPropertyChanged(nameof(OutputShiftVisibility));
-                CommandManager.InvalidateRequerySuggested();
-            }
+            SetField(ref _outputShift, value);
+            OnPropertyChanged(nameof(OutputShiftLabel));
         }
+    }
 
-        public int? OutputShift
+    public string OutputShiftLabel => OutputShift.HasValue ? $"Сдвиг: {OutputShift}" : string.Empty;
+
+    public Visibility ShiftVisibility { get; private set; } = Visibility.Visible;
+
+    public Visibility OutputShiftVisibility => !string.IsNullOrWhiteSpace(OutputText) && _selectedOperation.Type != OperationType.Decrypt ? Visibility.Visible : Visibility.Collapsed;
+
+    public string ErrorMessage => _messages.Message;
+    public MessageType ErrorType => _messages.Type;
+    public Visibility ErrorVisibility => _messages.HasMessage ? Visibility.Visible : Visibility.Collapsed;
+
+    public ICommand PasteCommand { get; }
+    public ICommand CalculateCommand { get; }
+    public ICommand CopyCommand { get; }
+    public ICommand CopyShiftCommand { get; }
+
+    public MainViewModel(Page page)
+    {
+        _page = page;
+        _messages = new MessageService();
+        _dataInstaller = new DefaultDataInstaller();
+        _validator = new InputValidator();
+        _clipboard = new ClipboardService();
+
+        Alphabets = _dataInstaller.GetAlphabets();
+        Operations = _dataInstaller.GetOperations();
+
+        SelectedAlphabet = Alphabets.First();
+        SelectedOperation = Operations.First();
+
+        PasteCommand = new RelayCommand(ExecutePaste);
+        CalculateCommand = new RelayCommand(ExecuteCalculate, CanExecuteCalculate);
+        CopyCommand = new RelayCommand(ExecuteCopy, CanExecuteCopy);
+        CopyShiftCommand = new RelayCommand(ExecuteCopyShift, CanExecuteCopyShift);
+
+        CommandManager.RequerySuggested += (s, e) =>
         {
-            get => _outputShift;
-            set
-            {
-                SetField(ref _outputShift, value);
-                OnPropertyChanged(nameof(OutputShiftLabel));
-            }
+            ((RelayCommand)CalculateCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)CopyCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)CopyShiftCommand).RaiseCanExecuteChanged();
+        };
+    }
+
+    private void RefreshErrorBindings()
+    {
+        OnPropertyChanged(nameof(ErrorMessage));
+        OnPropertyChanged(nameof(ErrorType));
+        OnPropertyChanged(nameof(ErrorVisibility));
+    }
+
+    private void ExecutePaste()
+    {
+        try
+        {
+            InputText = _clipboard.Paste();
         }
-
-        public string OutputShiftLabel => OutputShift.HasValue ? $"Сдвиг: {OutputShift}" : string.Empty;
-
-        public Visibility ShiftVisibility { get; private set; } = Visibility.Visible;
-
-        public Visibility OutputShiftVisibility => !string.IsNullOrWhiteSpace(OutputText) && _selectedOperation.Type != OperationType.Decrypt ? Visibility.Visible : Visibility.Collapsed;
-
-        public string ErrorMessage => _messages.Message;
-        public MessageType ErrorType => _messages.Type;
-        public Visibility ErrorVisibility => _messages.HasMessage ? Visibility.Visible : Visibility.Collapsed;
-
-        public ICommand PasteCommand { get; }
-        public ICommand CalculateCommand { get; }
-        public ICommand CopyCommand { get; }
-        public ICommand CopyShiftCommand { get; }
-
-        public MainViewModel(Page page)
+        catch (Exception ex)
         {
-            _page = page;
-            _messages = new MessageService();
-            _dataInstaller = new DefaultDataInstaller();
-            _validator = new InputValidator();
-            _clipboard = new ClipboardService();
-
-            Alphabets = _dataInstaller.GetAlphabets();
-            Operations = _dataInstaller.GetOperations();
-
-            SelectedAlphabet = Alphabets.First();
-            SelectedOperation = Operations.First();
-
-            PasteCommand = new RelayCommand(ExecutePaste);
-            CalculateCommand = new RelayCommand(ExecuteCalculate, CanExecuteCalculate);
-            CopyCommand = new RelayCommand(ExecuteCopy, CanExecuteCopy);
-            CopyShiftCommand = new RelayCommand(ExecuteCopyShift, CanExecuteCopyShift);
-
-            CommandManager.RequerySuggested += (s, e) =>
-            {
-                ((RelayCommand)CalculateCommand).RaiseCanExecuteChanged();
-                ((RelayCommand)CopyCommand).RaiseCanExecuteChanged();
-                ((RelayCommand)CopyShiftCommand).RaiseCanExecuteChanged();
-            };
+            _messages.ShowError($"Ошибка: {ex.Message}");
+            RefreshErrorBindings();
         }
+    }
 
-        private void RefreshErrorBindings()
+    private void ExecuteCalculate()
+    {
+        try
         {
-            OnPropertyChanged(nameof(ErrorMessage));
-            OnPropertyChanged(nameof(ErrorType));
-            OnPropertyChanged(nameof(ErrorVisibility));
-        }
+            InputValidationResult result = _validator.Validate(InputText.ToLower(), SelectedAlphabet);
 
-        private void ExecutePaste()
-        {
-            try
+            if (!result.IsValid)
             {
-                InputText = _clipboard.Paste();
-            }
-            catch (Exception ex)
-            {
-                _messages.ShowError($"Ошибка: {ex.Message}");
-                RefreshErrorBindings();
-            }
-        }
-
-        private void ExecuteCalculate()
-        {
-            try
-            {
-                var result = _validator.Validate(InputText.ToLower(), SelectedAlphabet);
-
-                if (!result.IsValid)
-                {
-                    _messages.ShowError(result.Message);
-                    OutputText = string.Empty;
-                    OutputShift = null;
-                }
-                else
-                {
-                    OutputText = ApplyCipher();
-                    if (result.Type == MessageType.Warning)
-                        _messages.ShowWarning(result.Message);
-                    else
-                        _messages.Clear();
-                }
-            }
-            catch (Exception ex)
-            {
-                _messages.ShowError($"Ошибка при обработке: {ex.Message}");
+                _messages.ShowError(result.Message);
                 OutputText = string.Empty;
                 OutputShift = null;
             }
-            finally
+            else
             {
-                RefreshErrorBindings();
+                OutputText = ApplyCipher();
+                if (result.Type == MessageType.Warning)
+                    _messages.ShowWarning(result.Message);
+                else
+                    _messages.Clear();
             }
         }
-
-        private string ApplyCipher()
+        catch (Exception ex)
         {
-            switch (_selectedOperation.Type)
-            {
-                case OperationType.Decrypt:
-                    OutputShift = SelectedShift;
-                    return CaesarCipher.Decrypt(InputText, SelectedAlphabet, SelectedShift);
-
-                case OperationType.Encrypt:
-                    OutputShift = SelectedShift;
-                    return CaesarCipher.Encrypt(InputText, SelectedAlphabet, SelectedShift);
-
-                case OperationType.Cryptanalyze:
-                    var result = CaesarCipher.Cryptanalyze(InputText, SelectedAlphabet);
-                    OutputShift = result.Shift;
-                    return result.Result;
-
-                default:
-                    throw new InvalidOperationException("Неизвестный тип операции");
-            }
+            _messages.ShowError($"Ошибка при обработке: {ex.Message}");
+            OutputText = string.Empty;
+            OutputShift = null;
         }
-
-        private bool CanExecuteCalculate() => !string.IsNullOrWhiteSpace(InputText);
-
-        private void ExecuteCopy()
+        finally
         {
-            try
-            {
-                _clipboard.Copy(OutputText);
-            }
-            catch (Exception ex)
-            {
-                _messages.ShowError($"Ошибка при копировании: {ex.Message}");
-                RefreshErrorBindings();
-            }
+            RefreshErrorBindings();
         }
+    }
 
-        private bool CanExecuteCopy() => !string.IsNullOrWhiteSpace(OutputText);
-
-        private void ExecuteCopyShift()
+    private string ApplyCipher()
+    {
+        switch (_selectedOperation.Type)
         {
-            try
-            {
-                if (OutputShift.HasValue)
-                    _clipboard.Copy(OutputShift.Value.ToString());
-            }
-            catch (Exception ex)
-            {
-                _messages.ShowError($"Ошибка при копировании сдвига: {ex.Message}");
-                RefreshErrorBindings();
-            }
+            case OperationType.Decrypt:
+                OutputShift = SelectedShift;
+                return CaesarCipher.Decrypt(InputText, SelectedAlphabet, SelectedShift);
+
+            case OperationType.Encrypt:
+                OutputShift = SelectedShift;
+                return CaesarCipher.Encrypt(InputText, SelectedAlphabet, SelectedShift);
+
+            case OperationType.Cryptanalyze:
+                (string Result, int Shift) result = CaesarCipher.Cryptanalyze(InputText, SelectedAlphabet);
+                OutputShift = result.Shift;
+                return result.Result;
+
+            default:
+                throw new InvalidOperationException("Неизвестный тип операции");
         }
+    }
 
-        private bool CanExecuteCopyShift() => OutputShift.HasValue;
+    private bool CanExecuteCalculate() => !string.IsNullOrWhiteSpace(InputText);
 
-        private void UpdateShifts()
+    private void ExecuteCopy()
+    {
+        try
         {
-            Shifts = Enumerable.Range(0, SelectedAlphabet.MaxShift + 1).ToList();
-            OnPropertyChanged(nameof(Shifts));
-            SelectedShift = Math.Min(SelectedShift, SelectedAlphabet.MaxShift);
+            _clipboard.Copy(OutputText);
         }
-
-        private void UpdateShiftVisibility()
+        catch (Exception ex)
         {
-            ShiftVisibility = SelectedOperation.Type != OperationType.Cryptanalyze
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-            OnPropertyChanged(nameof(ShiftVisibility));
-            VisualStateManager.GoToState(_page, ShiftVisibility == Visibility.Visible ? "ShiftComboBoxVisible" : "ShiftComboBoxHidden", true);
+            _messages.ShowError($"Ошибка при копировании: {ex.Message}");
+            RefreshErrorBindings();
         }
+    }
+
+    private bool CanExecuteCopy() => !string.IsNullOrWhiteSpace(OutputText);
+
+    private void ExecuteCopyShift()
+    {
+        try
+        {
+            if (OutputShift.HasValue)
+                _clipboard.Copy(OutputShift.Value.ToString());
+        }
+        catch (Exception ex)
+        {
+            _messages.ShowError($"Ошибка при копировании сдвига: {ex.Message}");
+            RefreshErrorBindings();
+        }
+    }
+
+    private bool CanExecuteCopyShift() => OutputShift.HasValue;
+
+    private void UpdateShifts()
+    {
+        Shifts = Enumerable.Range(0, SelectedAlphabet.MaxShift + 1).ToList();
+        OnPropertyChanged(nameof(Shifts));
+        SelectedShift = Math.Min(SelectedShift, SelectedAlphabet.MaxShift);
+    }
+
+    private void UpdateShiftVisibility()
+    {
+        ShiftVisibility = SelectedOperation.Type != OperationType.Cryptanalyze
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        OnPropertyChanged(nameof(ShiftVisibility));
+        VisualStateManager.GoToState(_page, ShiftVisibility == Visibility.Visible ? "ShiftComboBoxVisible" : "ShiftComboBoxHidden", true);
     }
 }
